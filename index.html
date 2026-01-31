@@ -192,7 +192,6 @@
         // 2. Ejecutamos Bioquímica. Esto sobrescribirá el output anterior.
         extraerBioquimica();
         const resBioquimica = document.getElementById("output").textContent;
-        console.log(resHemograma+resBioquimica);
         // 3. Ahora que tenemos ambos en variables, los unimos con un salto de línea.
         // Usamos innerText para que el navegador interprete correctamente el \n
         setTimeout(() => {
@@ -240,10 +239,21 @@
         let resultados = [];
         let valores = {};
         const lineas = bloque.split(/\n/);
-
+        console.log(lineas)
         for (let linea of lineas) {
           for (let clave in mapa) {
-            const regex = new RegExp(clave, "i");
+            let regex = '';
+            if(clave == "TIEMPO DE TROMBOPLASTINA PARCIAL\\s*\\(?PTT\\)?;?\\s*EN\\s*PLASMA" ||
+              clave == "TIEMPO DE TROMBINA\\s*\\(?TT\\)?;?\\s*PLASMA"
+            ){
+              regex = new RegExp(
+                clave + ".*?([0-9]+[.,]?[0-9]*)",
+                "i"
+              );
+            }else{
+              regex = new RegExp(clave, "i");
+            }
+
             if (regex.test(linea)) {
               let limpia = linea.replace(/^\d+\s+/, "");
               let match = limpia.match(/([0-9]+[.,]?[0-9]*)/);
