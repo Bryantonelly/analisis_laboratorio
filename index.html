@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Pro - Extractor de Valores</title>
+    <style>
+      /* Reset y Estilos Base */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      
+      body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        background-color: #f1f5f9; 
+        color: #1e293b;
+        line-height: 1.6;
+        display: flex;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      .container {
+        background: #ffffff;
+        max-width: 800px;
+        width: 100%;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      }
+
+      /* Encabezado */
+      .header {
+        border-bottom: 2px solid #f1f5f9;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+      }
+
+      h2 { 
+        color: #0f172a; 
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Formulario */
+      .form-group { margin-bottom: 20px; }
+
+      label { 
+        display: block; 
+        font-size: 0.875rem; 
+        font-weight: 600; 
+        margin-bottom: 8px;
+        color: #475569;
+      }
+
+      select, textarea { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1.5px solid #e2e8f0; 
+        border-radius: 8px; 
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+      }
+
+      select:focus, textarea:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      textarea { 
+        height: 180px; 
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      /* Botones */
+      button { 
+        background: #6366f1; 
+        color: white; 
+        border: none; 
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        font-size: 1rem;
+        transition: background 0.2s;
+      }
+
+      button:hover { background: #4f46e5; }
+      button:active { transform: translateY(1px); }
+
+      /* Resultados */
+      .results-section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 2px solid #f1f5f9;
+      }
+
+      h3 { 
+        font-size: 1.1rem; 
+        color: #334155; 
+        margin-bottom: 12px;
+      }
+
+      #output { 
+        background: #f8fafc; 
+        padding: 20px; 
+        border-radius: 8px; 
+        border: 1px dashed #cbd5e1;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        color: #334155;
+        min-height: 100px;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        background: #dcfce7;
+        color: #166534;
+      }
+    </style>
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+      <h2>Extractor de Laboratorio</h2>
+    </div>
+    
+    <div class="form-group">
+      <label for="tipoExamen">Tipo de Examen</label>
+      <select id="tipoExamen">
+        <option value="ambos">Hemograma y Bioquímica Completa</option>
+        <option value="hemograma">Sólo Hemograma</option>
+        <option value="bioquimica">Sólo Bioquímica</option>
+        <option value="hormonal">Hormonal</option>
+        <option value="virales">Virales</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="inputText">Texto del Reporte Médico</label>
+      <textarea id="inputText" placeholder="Pega los resultados del laboratorio aquí..."></textarea>
+    </div>
+
+    <button onclick="procesar()">Procesar Datos</button>
+
+    <div class="results-section">
+      <div class="status-badge">Vista previa de resultados</div>
+      <div id="output">Los resultados procesados aparecerán aquí...</div>
+    </div>
+  </div>
+
+  <script>
+    function procesar() {
+      const texto = document.getElementById('inputText').value;
+
+      if(!texto) {
+        alert("Por favor, pega algún texto para procesar.");
+        return;
+      }
+
+      const tipo = document.getElementById("tipoExamen").value;
+      if (tipo === "ambos") {
+        extraerAmbos();
+      } if (tipo === "hemograma"){
+        extraerHemograma();
+      } if (tipo === "ambos") {
+        extraerBioquimica();
+      } if (tipo === "hormonal"){
+        extraerHormonas();
+      } if (tipo === "virales") {
+        extraerInmunologia();
+      }
+    }
+
+    function extraerAmbos() {
+      console.log("ambos")
+        // 1. Ejecutamos Hemograma. Esto pondrá el resultado en el DOM.
+        extraerHemograma();
+        const resHemograma = document.getElementById("output").textContent;
+
+        // 2. Ejecutamos Bioquímica. Esto sobrescribirá el output anterior.
+        extraerBioquimica();
+        const resBioquimica = document.getElementById("output").textContent;
+        console.log(resHemograma+resBioquimica);
+        // 3. Ahora que tenemos ambos en variables, los unimos con un salto de línea.
+        // Usamos innerText para que el navegador interprete correctamente el \n
+        setTimeout(() => {
+          document.getElementById("output").innerText = resHemograma + "\nBIOQUIMICA: " + resBioquimica;
+      
+        }, 1000);
+    }
+    // --- Lógica HEMOGRAMA ---
+    function extraerHemograma() {
+      console.log("extraerHemograma")
+
+      const text = document.getElementById("inputText").value;
+
+      // Dividir en bloques por "MUESTRA:"
+      const bloques = text.split(/MUESTRA:/i).slice(1);
+
+      const mapa = {
+        "\\bLEUCOCITOS\\b": "LEU",
+        "NEUTR[OÓ]FILO(?:S)? SEGMENTADO(?:S)?": "SEG", // %
+        "\\bLINFOCITOS\\b": "LINF", // %
+        "\\bBLASTOS\\b": "BLASTOS", // %
+        "^\\d+\\s+HEMOGLOBINA\\s+(?=\\d)": "HB",
+        "\\bRECUENTO DE PLAQUETAS\\b": "PLAQ", // *1000
+        "\\bINR TP\\b": "INR TP", // %
+        "FIBRINOGENO;?\\s*ACTIVIDAD": "FIB",   // FIB
+        "TIEMPO DE PROTOMBINA\\s*\\(?TP\\)?": "TP",   // TP con o sin ( )
+        "INR": "INR",   // INR directo
+        "TIEMPO DE TROMBOPLASTINA PARCIAL\\s*\\(?PTT\\)?;?\\s*EN\\s*PLASMA": "TTP",  // TTP
+        "TIEMPO DE TROMBINA\\s*\\(?TT\\)?;?\\s*PLASMA": "TT",  // TT
+
+        "\\bHEMATOCRITO\\b": "HTO", // % 
+        "\\bVOLUMEN CORPUSCULAR MEDIO\\b": "VCM", //fl
+        "\\bHEMOGLOBINA CORPUSCULAR MEDIA\\b": "HCM", //pg
+        "\\bPROMIELOCITO\\b": "PROMIELO", // %
+        "\\bMIELOCITO\\b": "MIELO", // %
+        "\\bMETAMIELOCITOS\\b": "METAMIELO",// %
+        "\\bEOSINOFILOS\\b": "EOS",// %
+        "\\bBASOFILOS\\b": "BASO",// %
+        "\\bMONOCITOS\\b": "MONO",// %
+      };
+
+      let salida = [];
+
+      bloques.forEach(bloque => {
+        let resultados = [];
+        let valores = {};
+        const lineas = bloque.split(/\n/);
+
+        for (let linea of lineas) {
+          for (let clave in mapa) {
+            const regex = new RegExp(clave, "i");
+            if (regex.test(linea)) {
+              let limpia = linea.replace(/^\d+\s+/, "");
+              let match = limpia.match(/([0-9]+[.,]?[0-9]*)/);
+              if (match) {
+                let valor = parseFloat(match[1].replace(",", "."));
+                valores[mapa[clave]] = valor;
+              }
+            }
+          }
+        }
+
+        if (valores["LEU"] !== undefined) valores["LEU"] *= 1000;
+        if (valores["PLAQ"] !== undefined) valores["PLAQ"] *= 1000;
+
+        for (let clave of ["LEU", "SEG", "LINF", "BLASTOS", "HB", "PLAQ","FIB","TP","INR","TTP","TT", "HTO","PROMIELO","MIELO","METAMIELO","EOS","BASO","MONO"]) {
+          if (valores[clave] !== undefined) {
+            const lista = ["SEG", "LINF", "BLASTOS", "HTO","PROMIELO","MIELO","METAMIELO","EOS","BASO","MONO"];
+            if (lista.includes(clave)) {
+              resultados.push(`${clave} ${valores[clave]}%`);
+            } else {
+              resultados.push(`${clave} ${valores[clave]}`);
+            }
+            if ("LEU" == clave) {
+                const ran = (valores["SEG"] / 100) * valores["LEU"];
+                resultados.push(`RAN ${ran.toFixed(2)}`);
+            }
+          }
+        }
+
+        // if (valores["LEU"] !== undefined && valores["SEG"] !== undefined) {
+        //   const ran = (valores["SEG"] / 100) * valores["LEU"];
+        //   resultados.push(`RAN ${ran.toFixed(2)}`);
+        // }
+
+        if (resultados.length > 0) {
+          salida.push(resultados.join("  "));
+        }
+      });
+
+      document.getElementById("output").textContent = `ANALITICA: ` + salida.join("  ");
+    }
+
+    // --- Lógica BIOQUÍMICA ---
+    function extraerBioquimica() {
+      console.log("extraerBioquimica")
+      const texto = document.getElementById("inputText").value;
+      const examenes = [
+        { "nombre": "PROTEINA C-REACTIVA", "abreviatura": "PCR", "valor": 0.66 },
+        { "nombre": "PROTEINA C REACTIVA", "abreviatura": "PCR", "valor": 0.66 },
+        { "nombre": "PROTEINA C-REACTIVA (PCR)", "abreviatura": "PCR", "valor": 0.66 },
+        { "nombre": "CREATININA EN SANGRE", "abreviatura": "CR", "valor": 0.77 },
+        { "nombre": "CREATININA", "abreviatura": "CR", "valor": 0.77 },
+        { "nombre": "UREA EN SANGRE", "abreviatura": "U", "valor": 16.41 },
+        { "nombre": "UREA", "abreviatura": "U", "valor": 16.41 },
+        { "nombre": "ACIDO URICO", "abreviatura": "AU", "valor": 1.32 },
+        { "nombre": "GLUCOSA BASAL", "abreviatura": "GLU", "valor": 98.54 },
+        { "nombre": "LACTATO DESHIDROGENASA", "abreviatura": "LDH", "valor": 4.1 },
+        { "nombre": "DESHIDROGENASA LÁCTICA", "abreviatura": "LDH", "valor": 179.24 },
+        { "nombre": "DESHIDROGENASA LÁCTICA LDH", "abreviatura": "LDH", "valor": 179.24 },
+        { "nombre": "BILIRRUBINA TOTAL", "abreviatura": "BT", "valor": 1.1 },
+        { "nombre": "BILIRRUBINA DIRECTA", "abreviatura": "BD", "valor": 0.21 },
+        { "nombre": "BILIRRUBINA INDIRECTA", "abreviatura": "BI", "valor": null },
+        { "nombre": "GAMMA GLUTAMIL", "abreviatura": "GGT", "valor": 60.11 },
+        { "nombre": "FOSFATASA ALCALINA", "abreviatura": "FA", "valor": 61.99 },
+        { "nombre": "PROTEINAS TOTALES", "abreviatura": "PT", "valor": 6.47 },
+        { "nombre": "AST", "abreviatura": "TGO", "valor": 34.97 },
+        { "nombre": "ALT", "abreviatura": "TGP", "valor": 66.46 },
+        { "nombre": "ALBUMINA", "abreviatura": "ALB", "valor": 3.42 },
+        { "nombre": "GLOBULINA", "abreviatura": "GLOB", "valor": 3.05 },
+        { "nombre": "SODIO CNA+ (ELECTROLITOS)", "abreviatura": "NA", "valor": 4.5 },
+        { "nombre": "SODIO CNA+", "abreviatura": "NA", "valor": 4.5 },
+        { "nombre": "POTASIO K+", "abreviatura": "K", "valor": 4.1 },
+        { "nombre": "CALCIO", "abreviatura": "CA", "valor": 8.49 },
+        { "nombre": "CLORO", "abreviatura": "CL", "valor": 106.75 },
+        { "nombre": "FOSFORO", "abreviatura": "P", "valor": 3.77 },
+        { "nombre": "MAGNESIO", "abreviatura": "MG", "valor": 1.94 },        
+      ];
+      const resultados = [];
+      function escapeRegex(text) {
+        return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+      examenes.forEach(examen => {
+        const regex = new RegExp(
+          escapeRegex(examen.nombre) + "\\s+([0-9]+[\\.,]?[0-9]*)","i");
+        const match = texto.match(regex);
+        if (match) {
+          console.log(match)
+          resultados.push(examen.abreviatura + " " + match[1].replace(",", "."));
+        }
+      });
+      document.getElementById("output").textContent = resultados.join("  ");
+    }
+
+    function extraerHormonas() {
+      console.log("extraerHormonas");
+
+      const text = document.getElementById("inputText").value;
+
+      // Dividir en bloques por "MUESTRA:"
+      const bloques = text.split(/MUESTRA:/i).slice(1);
+
+      // Mapa de búsqueda (Regex -> Etiqueta de salida)
+      const mapa = {
+        "\\bACTH\\b": "ACTH",
+        "\\bPROLACTINA\\b": "PROLACTINA",
+        "\\bLH\\b": "LH",
+        "HORMONA DE CRECIMIENTO": "HORMONA DE CRECIMIENTO",
+        "\\bCORTISOL\\b": "CORTISOL",
+        "\\bFSH\\b": "FSH",
+        "\\bTIROGLOBULINA\\b": "TIROGLOBULINA",
+        "T4 LIBRE": "T4 LIBRE",
+        "T3 LIBRE": "T3 LIBRE",
+        "TSH": "TSH",
+        "TESTOSTERONA TOTAL": "TESTOSTERONA TOTAL",
+        "PARATIROIDEA": "PARATIROIDEA"
+      };
+
+      let salidaFinal = [];
+
+      bloques.forEach(bloque => {
+        const lineas = bloque.split(/\n/);
+
+        for (let linea of lineas) {
+          for (let clave in mapa) {
+            const regex = new RegExp(clave, "i");
+            
+            if (regex.test(linea)) {
+              // Buscamos un patrón: número de índice (opcional), nombre, y el valor numérico
+              // Ejemplo: "1  ACTH  14.90"
+              const matchValor = linea.match(/(\d+\.?\d+)\s*(?=\s+Hrs|$)/) || linea.match(/(\d+\.?\d+)/);
+              
+              if (matchValor) {
+                let nombreHormona = mapa[clave];
+                let valor = matchValor[1];
+                
+                // Evitamos duplicados si la misma hormona aparece en el mismo bloque
+                if (!salidaFinal.some(item => item.startsWith(nombreHormona))) {
+                  salidaFinal.push(`${nombreHormona} ${valor}`);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Mostrar el resultado unido por espacios
+      document.getElementById("output").textContent = salidaFinal.join(" ");
+    }
+
+    function extraerInmunologia() {
+      console.log("extraerInmunologia");
+
+      const text = document.getElementById("inputText").value;
+      const bloques = text.split(/MUESTRA:/i).slice(1);
+
+      const mapa = {
+        "AC CITOMEGALOVIRUS IGG": "CMV IGG",
+        "AC CITOMEGALOVIRUS IGM": "CMV IGM",
+        "HERPES SIMPLE, TIPO 1": "HERPES SIMPLE TIPO 1",
+        "HERPES SIMPLE, TIPO 2": "HERPES SIMPLE TIPO 2",
+        "AC ANTI RUBEOLA IGG": "AC ANTI RUBEOLA IGG",
+        "AC ANTI RUBEOLA IGM": "AC ANTI RUBEOLA IGM",
+        "AC ANTI TOXOPLASMA GONDII IGG": "AC ANTI TOXOPLASMA GONDII IGG",
+        "AC ANTI TOXOPLASMA GONDII IGM": "AC ANTI TOXOPLASMA GONDII IGM",
+        "VIRUS EPSTEIN-BARR.*VCA": "EBV VCA",
+        "VIRUS EPSTEIN-BARR.*EBNA": "EBV EBNA"
+      };
+
+      let salidaFinal = [];
+
+      bloques.forEach(bloque => {
+        // Extraemos el nombre de la prueba desde el encabezado del bloque (antes de "MUESTRA")
+        // O buscamos dentro de las líneas de resultados
+        const lineas = bloque.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+        for (let i = 0; i < lineas.length; i++) {
+          let linea = lineas[i];
+
+          // Caso 1: Resultados cualitativos (POSITIVO / negativo)
+          if (/IGG|IGM/i.test(linea) && /(POSITIVO|NEGATIVO)/i.test(linea)) {
+            let match = linea.match(/(IGG|IGM)\s+\w+\s+(POSITIVO|NEGATIVO)/i);
+            if (match) {
+              let tipo = match[1].toUpperCase();
+              let resultado = match[2].toUpperCase() === "POSITIVO" ? "+" : "-";
+              
+              // Intentar identificar el virus por el contexto del bloque
+              let nombreVirus = "";
+              if (bloque.includes("HERPES SIMPLE, TIPO 1")) nombreVirus = "HERPES SIMPLE TIPO 1";
+              else if (bloque.includes("HERPES SIMPLE, TIPO 2")) nombreVirus = "HERPES SIMPLE TIPO 2";
+              else if (bloque.includes("VCA")) nombreVirus = "EBV VCA";
+              else if (bloque.includes("EBNA")) nombreVirus = "EBV EBNA";
+
+              if (nombreVirus) {
+                salidaFinal.push(`${nombreVirus} ${tipo} ${resultado}`);
+              }
+            }
+          }
+
+          // Caso 2: Resultados numéricos que requieren interpretación (Reactivo / No Reactivo)
+          for (let clave in mapa) {
+            const regex = new RegExp(clave, "i");
+            if (regex.test(linea)) {
+              // Buscamos el valor numérico en la línea o la siguiente
+              let contenidoBusqueda = linea + " " + (lineas[i+1] || "");
+              let matchValor = contenidoBusqueda.match(/(\d+\.\d+)/);
+              
+              if (matchValor) {
+                let valor = parseFloat(matchValor[1]);
+                let interpretacion = "";
+
+                // Lógica de interpretación según el tipo de prueba
+                if (clave.includes("CMV IGG")) interpretacion = valor >= 6.0 ? "REACTIVO" : "NO REACTIVO";
+                else if (clave.includes("CMV IGM")) interpretacion = valor >= 1.0 ? "REACTIVO" : "NO REACTIVO";
+                else if (clave.includes("RUBEOLA IGG")) interpretacion = valor >= 10.1 ? "REACTIVO" : "NR";
+                else if (clave.includes("TOXOPLASMA")) interpretacion = "NR"; // Simplificado para el ejemplo
+                
+                salidaFinal.push(`${mapa[clave]} ${interpretacion}`);
+              }
+            }
+          }
+        }
+      });
+
+      // Limpiar duplicados y formatear
+      const unicos = [...new Set(salidaFinal)];
+      document.getElementById("output").textContent = unicos.join("   \n");
+    }
+  </script>
+</body>
+</html>
