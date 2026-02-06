@@ -144,6 +144,8 @@
         <option value="bioquimica">Sólo Bioquímica</option>
         <option value="hormonal">Hormonal</option>
         <option value="virales">Virales</option>
+        <option value="pefserico">PEF Sérico</option>
+        <option value="pefurinario">PEF Urinario</option>
       </select>
     </div>
     
@@ -179,7 +181,11 @@
       } if (tipo === "hormonal"){
         extraerHormonas();
       } if (tipo === "virales") {
-        extraerInmunologia();
+        extraerVirales();
+      } if (tipo === "pefserico") {
+        extraerPef();
+      } if (tipo === "pefurinario") {
+        extraerPefUrinario();
       }
     }
 
@@ -403,83 +409,202 @@
       document.getElementById("output").textContent = salidaFinal.join(" ");
     }
 
-    function extraerInmunologia() {
-      console.log("extraerInmunologia");
+    function extraerVirales() {
+      console.log("extraerVirales");
 
       const text = document.getElementById("inputText").value;
-      const bloques = text.split(/MUESTRA:/i).slice(1);
+      const bloques = text.split(/Codigo/i).slice(1);
+      let salida = [];
+      
+      const mapa = [
+        {
+            "name":"HERPES SIMPLE, TIPO 1",
+            "label":"HERPES SIMPLE TIPO 1",
+            "tipo":1
+        },
+        {
+            "name":"HERPES SIMPLE, TIPO 2",
+            "label":"HERPES SIMPLE TIPO 2",
+            "tipo":1
+        },
+        {
+            "name":"AC ANTI TOXOPLASMA GONDII IGG",
+            "label":"AC ANTI TOXOPLASMA GONDII IGG",
+            "tipo":2
+        },
+        {
+            "name":"AC ANTI TOXOPLASMA GONDII IGM",
+            "label":"AC ANTI TOXOPLASMA GONDII IGM",
+            "tipo":2
+        },
+        {
+            "name":"AC CITOMEGALOVIRUS IGM",
+            "label":"CMV IGM",
+            "tipo":2
+        },
+        {
+            "name":"AC CITOMEGALOVIRUS IGG",
+            "label":"CMV IGG",
+            "tipo":2
+        },
+        {
+            "name":"AC ANTI RUBEOLA IGG",
+            "label":"AC ANTI RUBEOLA IGG",
+            "tipo":2
+        },
+        {
+            "name":"AC ANTI RUBEOLA IGM",
+            "label":"AC ANTI RUBEOLA IGM",
+            "tipo":2
+        },
+        {
+          "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)",
+          "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)",
+          "tipo":1
+        },
+        {
+          "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)",
+          "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)",
+          "tipo":1
+        },
+        {
+            "name":"ANTICUERPO ANTI HTLV-I II",
+            "label":"ANTICUERPO ANTI HTLV-I II",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS B ANTIGENO DE SUPERF",
+            "label":"HEPATITIS B ANTIGENO DE SUPERF",
+            "tipo":2
+        },
+        {
+            "name":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)",
+            "label":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS A ANTICUERPO IGG",
+            "label":"HEPATITIS A ANTICUERPO IGG",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS A ANTICUERPO IGM",
+            "label":"HEPATITIS A ANTICUERPO IGM",
+            "tipo":2
+        },
+                {
+            "name":"HEPATITIS A ANTICUERPOs IGG",
+            "label":"HEPATITIS A ANTICUERPOs IGG",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS A ANTICUERPOs IGM",
+            "label":"HEPATITIS A ANTICUERPOs IGM",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE",
+            "label":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE",
+            "tipo":2
+        },
+                {
+            "name":"HEPATITIS B ANTIGENO E",
+            "label":"HEPATITIS B ANTIGENO E",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS B AC. ANTI CORE IGM",
+            "label":"HEPATITIS B AC. ANTI CORE IGM",
+            "tipo":2
+        },
+        {
+            "name":"HEPAT B AC.CONTRA ANTIGENO E",
+            "label":"HEPAT B AC.CONTRA ANTIGENO E",
+            "tipo":2
+        },
+        {
+            "name":"HEPATITIS C - (HCV)",
+            "label":"HEPATITIS C - (HCV)",
+            "tipo":2
+        },
+      ];
 
-      const mapa = {
-        "AC CITOMEGALOVIRUS IGG": "CMV IGG",
-        "AC CITOMEGALOVIRUS IGM": "CMV IGM",
-        "HERPES SIMPLE, TIPO 1": "HERPES SIMPLE TIPO 1",
-        "HERPES SIMPLE, TIPO 2": "HERPES SIMPLE TIPO 2",
-        "AC ANTI RUBEOLA IGG": "AC ANTI RUBEOLA IGG",
-        "AC ANTI RUBEOLA IGM": "AC ANTI RUBEOLA IGM",
-        "AC ANTI TOXOPLASMA GONDII IGG": "AC ANTI TOXOPLASMA GONDII IGG",
-        "AC ANTI TOXOPLASMA GONDII IGM": "AC ANTI TOXOPLASMA GONDII IGM",
-        "VIRUS EPSTEIN-BARR.*VCA": "EBV VCA",
-        "VIRUS EPSTEIN-BARR.*EBNA": "EBV EBNA"
-      };
-
-      let salidaFinal = [];
+      //console.log(bloques);
 
       bloques.forEach(bloque => {
-        // Extraemos el nombre de la prueba desde el encabezado del bloque (antes de "MUESTRA")
-        // O buscamos dentro de las líneas de resultados
-        const lineas = bloque.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+        let resultados = [];
+        let valores = {};
+        
+        for (let clave of mapa) {
+          console.log("clave; ", clave.name);
+          console.log("valor: ", clave.label);
 
-        for (let i = 0; i < lineas.length; i++) {
-          let linea = lineas[i];
-
-          // Caso 1: Resultados cualitativos (POSITIVO / negativo)
-          if (/IGG|IGM/i.test(linea) && /(POSITIVO|NEGATIVO)/i.test(linea)) {
-            let match = linea.match(/(IGG|IGM)\s+\w+\s+(POSITIVO|NEGATIVO)/i);
-            if (match) {
-              let tipo = match[1].toUpperCase();
-              let resultado = match[2].toUpperCase() === "POSITIVO" ? "+" : "-";
-              
-              // Intentar identificar el virus por el contexto del bloque
-              let nombreVirus = "";
-              if (bloque.includes("HERPES SIMPLE, TIPO 1")) nombreVirus = "HERPES SIMPLE TIPO 1";
-              else if (bloque.includes("HERPES SIMPLE, TIPO 2")) nombreVirus = "HERPES SIMPLE TIPO 2";
-              else if (bloque.includes("VCA")) nombreVirus = "EBV VCA";
-              else if (bloque.includes("EBNA")) nombreVirus = "EBV EBNA";
-
-              if (nombreVirus) {
-                salidaFinal.push(`${nombreVirus} ${tipo} ${resultado}`);
-              }
-            }
+          // const patron = escapeRegex(clave.name);
+          // regex = new RegExp(clave.name, "i");
+          // if (!regex.test(bloque)) {
+          //   console.log("no aplica");
+          //   continue;
+          // }
+          if (!bloque.includes(clave.name)) {
+            continue;
           }
 
-          // Caso 2: Resultados numéricos que requieren interpretación (Reactivo / No Reactivo)
-          for (let clave in mapa) {
-            const regex = new RegExp(clave, "i");
-            if (regex.test(linea)) {
-              // Buscamos el valor numérico en la línea o la siguiente
-              let contenidoBusqueda = linea + " " + (lineas[i+1] || "");
-              let matchValor = contenidoBusqueda.match(/(\d+\.\d+)/);
-              
-              if (matchValor) {
-                let valor = parseFloat(matchValor[1]);
-                let interpretacion = "";
-
-                // Lógica de interpretación según el tipo de prueba
-                if (clave.includes("CMV IGG")) interpretacion = valor >= 6.0 ? "REACTIVO" : "NO REACTIVO";
-                else if (clave.includes("CMV IGM")) interpretacion = valor >= 1.0 ? "REACTIVO" : "NO REACTIVO";
-                else if (clave.includes("RUBEOLA IGG")) interpretacion = valor >= 10.1 ? "REACTIVO" : "NR";
-                else if (clave.includes("TOXOPLASMA")) interpretacion = "NR"; // Simplificado para el ejemplo
-                
-                salidaFinal.push(`${mapa[clave]} ${interpretacion}`);
+          if (clave.tipo == 1) {
+            const bloqueMuestra = bloque.split(/MUESTRA/i);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            for (let linea of lineas) {
+              let resultadoLinea = "";
+              if(linea.toLowerCase().includes("IGG".toLowerCase())){
+                resultadoLinea = resultadoLinea +`IGG`;
+              }
+              if(linea.toLowerCase().includes("IGM".toLowerCase())){
+                resultadoLinea = resultadoLinea +`IGM`;
+              } 
+              if(linea.toLowerCase().includes("POSITIVO".toLowerCase())){
+                resultadoLinea = resultadoLinea +` POSITIVO`;
+              }
+              if(linea.toLowerCase().includes("NEGATIVO".toLowerCase())){
+                resultadoLinea = resultadoLinea +` NEGATIVO`;
+              }
+              if(resultadoLinea === ""){
+                continue;
+              }
+              resultados.push(`${clave.label} ${resultadoLinea}`);
+              //console.log(resultadoLinea);
+            }
+            console.log(resultados);
+          }
+          
+          if (clave.tipo == 2) {
+            const bloqueMuestra = bloque.split(/MUESTRA/i);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            for (let linea of lineas) {
+              let resultadoLinea = "";
+              if(linea.toLowerCase().includes(clave.name.toLowerCase())){
+                let limpia = linea.replace(/^\d+\s+/, "");
+                let match = limpia.match(/([0-9]+[.,]?[0-9]*)/);
+                if (match) {
+                  let valor = parseFloat(match[1].replace(",", "."));
+                  console.log("tipo 2: ", valor);
+                  resultados.push(`${clave.label} ${valor}`);
+                }
               }
             }
           }
         }
-      });
+        
+        if (resultados.length > 0) {
+          salida.push(resultados.join("\n"));
+        }
+        
+      })
 
-      // Limpiar duplicados y formatear
-      const unicos = [...new Set(salidaFinal)];
-      document.getElementById("output").textContent = unicos.join("   \n");
+      document.getElementById("output").textContent = `VIRALES: ` + salida.join("\n");
+    }
+
+
+    function escapeRegex(text) {
+      return text.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
     }
   </script>
 </body>
