@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio Pro - Extractor de Valores</title>
+    <title> Extractor de Valores Laboratorio</title>
     <style>
       /* Reset y Estilos Base */
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -133,7 +133,7 @@
 
   <div class="container">
     <div class="header">
-      <h2>Extractor de Laboratorio</h2><h6>v1.0.1</h6>
+      <h2>Extractor de Laboratorio</h2><h6>v1.0.2</h6>
     </div>
     
     <div class="form-group">
@@ -686,11 +686,10 @@
             for (let linea of lineas) {
 
               if (coincidenciaPrevia) {
-                // aquí va lo que quieres hacer con la línea siguiente
                 console.log("Procesando línea siguiente:", linea);
                 let match = linea.match(/(\d+)\.(\d+)/);
                 if (match) {
-                  let numero = `${match[1]},${match[2]}`;
+                  let numero = `${match[1]}.${match[2]}`;
                   console.log(numero); // 0,7
                   resultados.push([`${clave.label} ${numero}`, clave.posicion]);
                 }
@@ -698,7 +697,6 @@
                 continue;
               }
 
-              // 👉 detectas coincidencia en la línea actual
               if (linea.toLowerCase().includes(clave.name.toLowerCase())) {
                 coincidenciaPrevia = true;
                 continue; // no procesas esta, sino la siguiente
@@ -744,6 +742,145 @@
 
       document.getElementById("output").textContent = `Sérico: PEF:` + salidaOrdenada.join(" ");
       //Sérico: PEF: Beta 0.7 Gamma 0.7 / IF (Inmunofijacion): IgG Lambda / IgG 985 IgA 69 IgM: 36 / K (Kappa) 25 / L (Lambda) 73
+    }
+
+    function extraerPefUrinario() {
+      console.log("extraerPefUrinario");
+
+      const text = document.getElementById("inputText").value;
+      const bloques = text.split(/Examen/i).slice(1);
+      let salida = [];
+
+      const mapa = [
+        {
+          name: "BETA GLOBULINA",
+          label: "Beta",
+          type: 1,
+          posicion: 0
+        },
+        {
+          name: "GAMMA GLOBULINA",
+          label: "Gamma",
+          type: 1,
+          posicion: 1
+        },
+        {
+          name: "Bence Jones",
+          label: "/ IF :",
+          type: 3,
+          posicion: 2
+        },
+        {
+          name: "CADENA KAPPA LIBRE",
+          label: "/ K",
+          type: 2,
+          posicion: 3
+        },
+        {
+          name: "CADENA LAMBDA LIBRE",
+          label: "/ L",
+          type: 2,
+          posicion: 4
+        },
+      ]
+      
+      bloques.forEach(bloque => {
+        let resultados = [];
+        let valores = {};
+        
+        for (let clave of mapa) {
+          // console.log("clave; ", clave.name);
+          // console.log("valor: ", clave.label);
+
+          if (!bloque.includes(clave.name)) {
+            continue;
+          }
+          
+          if (clave.type == 1) {
+            const bloqueMuestra = bloque.split(/Muestra:/);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            let coincidenciaPrevia = false;
+            for (let linea of lineas) {
+
+              if (coincidenciaPrevia) {
+                console.log("Procesando línea siguiente:", linea);
+                let match = linea.match(/(\d+)\.(\d+)/);
+                if (match) {
+                  let numero = `${match[1]}.${match[2]}`;
+                  console.log(numero); // 0,7
+                  resultados.push([`${clave.label} ${numero}`, clave.posicion]);
+                }
+                coincidenciaPrevia = false;
+                continue;
+              }
+
+              if (linea.toLowerCase().includes(clave.name.toLowerCase())) {
+                coincidenciaPrevia = true;
+                continue; // no procesas esta, sino la siguiente
+              }
+              
+            }
+            //console.log(resultados);
+          }
+          
+          if (clave.type == 2) {
+            console.log("tipo 2: ");
+            const bloqueMuestra = bloque.split(/Muestra:/);
+            //console.log(bloqueMuestra);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            for (let linea of lineas) {
+              let resultadoLinea = "";
+              if(linea.toLowerCase().includes(clave.name.toLowerCase())){
+                let limpia = linea.replace(/^\d+\s+/, "");
+                const matches = limpia.match(/\d+(?:[.,]\d+)?/g);
+                //console.log(limpia.match(/\d+(?:[.,]\d+)?/g));
+
+                const ultimo = matches ? matches[matches.length - 1] : null;
+                if (ultimo) {
+                  let valor = parseFloat(ultimo.replace(",", "."));
+                  resultados.push([`${clave.label} ${valor}`, clave.posicion]);
+                }
+              }
+            }
+          }
+
+          if (clave.type == 3) {
+            console.log("tipo 3: ");
+            const bloqueMuestra = bloque.split(/Muestra:/);
+            console.log(bloqueMuestra);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            for (let linea of lineas) {
+              let resultadoLinea = "";
+              if(linea.toLowerCase().includes(clave.name.toLowerCase())){
+                if(linea.toLowerCase().includes("POSITIVO".toLowerCase()) || linea.toLowerCase().includes("POSITIVA".toLowerCase())){
+                  resultadoLinea = `(+)`;
+                }
+                if(linea.toLowerCase().includes("NEGATIVO".toLowerCase()) || linea.toLowerCase().includes("NEGATIVA".toLowerCase())){
+                  resultadoLinea = `(-)`;
+                }
+              }
+              
+              if(resultadoLinea === ""){
+                continue;
+              }
+              console.log("Resultado linea;", resultadoLinea)
+              resultados.push([`${clave.label} ${resultadoLinea}`, clave.posicion]);
+            }
+          }
+        }
+        
+        if (resultados.length > 0) {
+          console.log("resultados", resultados);
+          salida.push(...resultados);
+        }
+        
+      })
+      const salidaOrdenada = [...salida]
+            .sort((a, b) => a[1] - b[1])
+            .map(e => e[0]);
+
+      document.getElementById("output").textContent = `Orina : PEF:` + salidaOrdenada.join(" ");
+      //Orina : PEF: Beta 0.0 Gamma 0.0 / IF (Bence Jones): (-)  / K (Kappa) 17 / L (Lambda) 2
     }
 
     function escapeRegex(text) {
