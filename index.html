@@ -473,7 +473,7 @@
             "tipo":2
         },
         {
-            "name":"HEPATITIS B ANTIGENO DE SUPERF",
+            "name":"HEPATITIS B ANTIGENO DE SUPERF", ////
             "label":"HEPATITIS B ANTIGENO DE SUPERF",
             "tipo":2
         },
@@ -581,13 +581,26 @@
             for (let linea of lineas) {
               let resultadoLinea = "";
               if(linea.toLowerCase().includes(clave.name.toLowerCase())){
-                let limpia = linea.replace(/^\d+\s+/, "");
-                let match = limpia.match(/([0-9]+[.,]?[0-9]*)/);
-                if (match) {
-                  let valor = parseFloat(match[1].replace(",", "."));
-                  console.log("tipo 2: ", valor);
-                  resultados.push(`${clave.label} ${valor}`);
-                }
+                  lineaTratada = linea.replace(/[<>]/g, "");
+
+                  const regex = new RegExp(
+                    clave.name + "\\s*[:=]?\\s*([0-9]+[.,]?[0-9]*)",
+                    "i"
+                  );
+
+                  const match = lineaTratada.match(regex);
+
+                  if (match) {
+                    let valor = parseFloat(match[1].replace(",", "."));
+                    console.log("tipo 2:", valor);
+                    resultados.push(`${clave.label} ${valor}`);
+                  } else {
+                    const matchReactivo = lineaTratada.match(/\b(NO\s+REACTIVO|REACTIVO)\b/i);
+                    if (matchReactivo) {
+                      console.log(matchReactivo[1]); // "REACTIVO" o "NO REACTIVO"
+                      resultados.push(`${clave.label} ${matchReactivo[1]}`);
+                    }
+                  }
               }
             }
           }
@@ -602,6 +615,136 @@
       document.getElementById("output").textContent = `VIRALES: ` + salida.join("\n");
     }
 
+    function extraerPef() {
+      console.log("extraerPef");
+
+      const text = document.getElementById("inputText").value;
+      const bloques = text.split(/Examen/i).slice(1);
+      let salida = [];
+
+      const mapa = [
+        {
+          name: "BETA GLOBULINA",
+          label: "Beta",
+          type: 1,
+          posicion: 0
+        },
+        {
+          name: "GAMMA GLOBULINA",
+          label: "Gamma",
+          type: 1,
+          posicion: 1
+        },
+        {
+          name: "IgG",
+          label: "/ IF : IgG Lambda / IgG",
+          type: 2,
+          posicion: 2
+        },
+        {
+          name: "IgA",
+          label: "IgA",
+          type: 2,
+          posicion: 3
+        },
+        {
+          name: "IgM",
+          label: "IgM:",
+          type: 2,
+          posicion: 4
+        },
+        {
+          name: "CADENA KAPPA LIBRE",
+          label: "/ K",
+          type: 2,
+          posicion: 5
+        },
+        {
+          name: "CADENA LAMBDA LIBRE",
+          label: "/ L",
+          type: 2,
+          posicion: 6
+        },
+      ]
+      
+      bloques.forEach(bloque => {
+        let resultados = [];
+        let valores = {};
+        
+        for (let clave of mapa) {
+          // console.log("clave; ", clave.name);
+          // console.log("valor: ", clave.label);
+
+          if (!bloque.includes(clave.name)) {
+            continue;
+          }
+          
+          if (clave.type == 1) {
+            const bloqueMuestra = bloque.split(/Muestra:/);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            let coincidenciaPrevia = false;
+            for (let linea of lineas) {
+
+              if (coincidenciaPrevia) {
+                // aquí va lo que quieres hacer con la línea siguiente
+                console.log("Procesando línea siguiente:", linea);
+                let match = linea.match(/(\d+)\.(\d+)/);
+                if (match) {
+                  let numero = `${match[1]},${match[2]}`;
+                  console.log(numero); // 0,7
+                  resultados.push([`${clave.label} ${numero}`, clave.posicion]);
+                }
+                coincidenciaPrevia = false;
+                continue;
+              }
+
+              // 👉 detectas coincidencia en la línea actual
+              if (linea.toLowerCase().includes(clave.name.toLowerCase())) {
+                coincidenciaPrevia = true;
+                continue; // no procesas esta, sino la siguiente
+              }
+              
+            }
+            console.log(resultados);
+          }
+          
+          if (clave.type == 2) {
+            console.log("tipo 2: ");
+            const bloqueMuestra = bloque.split(/Muestra:/);
+            console.log(bloqueMuestra);
+            const lineas = bloqueMuestra[1].split(/\n/);
+            for (let linea of lineas) {
+              let resultadoLinea = "";
+              if(linea.toLowerCase().includes(clave.name.toLowerCase())){
+                let limpia = linea.replace(/^\d+\s+/, "");
+                const matches = limpia.match(/\d+(?:[.,]\d+)?/g);
+                //console.log(limpia.match(/\d+(?:[.,]\d+)?/g));
+
+                const ultimo = matches ? matches[matches.length - 1] : null;
+                if (ultimo) {
+                  let valor = parseFloat(ultimo.replace(",", "."));
+                  resultados.push([`${clave.label} ${valor}`, clave.posicion]);
+                  //resultados.splice(clave.posicion, 0, `${clave.label} ${valor}`);
+                }
+              }
+            }
+          }
+        }
+        
+        if (resultados.length > 0) {
+          console.log("resultados", resultados);
+          salida.push(...resultados);
+          //salida.push(resultados.join(" "));
+        }
+        
+      })
+      const salidaOrdenada = [...salida]
+            .sort((a, b) => a[1] - b[1])
+            .map(e => e[0]);
+
+      document.getElementById("output").textContent = `Sérico: PEF:` + salidaOrdenada.join(" ");
+      //Sérico: PEF: Beta 0.7 Gamma 0.7 / IF (Inmunofijacion): IgG Lambda / IgG 985 IgA 69 IgM: 36 / K (Kappa) 25 / L (Lambda) 73
+    }
 
     function escapeRegex(text) {
       return text.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
