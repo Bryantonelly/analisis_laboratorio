@@ -18,8 +18,8 @@
         padding: 40px 20px;
       }
 
-      /* === INICIO ESTILOS PANTALLA DE MANTENIMIENTO === */
-      #maintenanceScreen {
+      /* === INICIO ESTILOS PANTALLA DE LOGIN === */
+      #loginScreen {
         position: fixed;
         top: 0;
         left: 0;
@@ -32,30 +32,60 @@
         z-index: 9999;
       }
 
-      .maintenance-content {
+      .login-content {
+        background: #ffffff;
         text-align: center;
-        max-width: 500px;
-        padding: 40px;
+        max-width: 400px;
+        width: 100%;
+        padding: 40px 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       }
 
-      .maintenance-content h1 {
-        font-size: 2.5rem;
-        color: #334155;
-        margin-bottom: 16px;
+      .login-content h1 {
+        font-size: 1.8rem;
+        color: #0f172a;
+        margin-bottom: 8px;
         font-weight: 700;
       }
 
-      .maintenance-content p {
+      .login-content p {
         color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 8px;
+        font-size: 0.95rem;
+        margin-bottom: 24px;
+      }
+
+      .login-content input {
+        width: 100%; 
+        padding: 12px; 
+        border: 1.5px solid #e2e8f0; 
+        border-radius: 8px; 
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        margin-bottom: 16px;
+        text-align: center;
+        letter-spacing: 2px;
+      }
+
+      .login-content input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      .error-msg {
+        color: #ef4444;
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+        display: none;
+        font-weight: 600;
       }
 
       /* Clase para ocultar sin romper los estilos originales */
       .oculto {
         display: none !important;
       }
-      /* === FIN ESTILOS PANTALLA DE MANTENIMIENTO === */
+      /* === FIN ESTILOS PANTALLA DE LOGIN === */
 
       .container {
         background: #ffffff;
@@ -170,13 +200,16 @@
   </head>
   <body>
 
-  <!-- PANTALLA DE MANTENIMIENTO -->
-  <div id="maintenanceScreen">
-    <div class="maintenance-content">
-      <h1>503 Service Unavailable</h1>
-      <p>El sistema se encuentra temporalmente fuera de servicio por mantenimiento programado.</p>
-      <!-- EL BOTÓN OCULTO AHORA SON LAS PALABRAS "más tarde." PARA QUE SEA FÁCIL HACER CLIC -->
-      <p>Por favor, intente nuevamente <span id="secretTrigger" onclick="unlockApp()" style="cursor: default; user-select: none;">más tarde.</span></p>
+  <!-- PANTALLA DE BIENVENIDA / LOGIN -->
+  <div id="loginScreen">
+    <div class="login-content">
+      <h1>Bienvenido</h1>
+      <p>Por favor, ingresa la clave de acceso para continuar.</p>
+      
+      <input type="password" id="passInput" placeholder="Contraseña dinámica" onkeypress="if(event.key === 'Enter') unlockApp()">
+      <div id="errorMsg" class="error-msg">Contraseña incorrecta</div>
+      
+      <button onclick="unlockApp()">Ingresar al Sistema</button>
     </div>
   </div>
 
@@ -213,11 +246,35 @@
   </div>
 
   <script>
+    // --- LÓGICA DE CONTRASEÑA DINÁMICA ---
+    // Genera una contraseña basada en el mes y año actual
+    function getDynamicPassword() {
+      const now = new Date();
+      const mes = now.getMonth() + 1; // Obtiene el mes (1-12)
+      const anio = now.getFullYear(); // Obtiene el año (ej. 2026)
+      const llaveSecreta = 123;       // Multiplicador arbitrario
+      
+      // Multiplica mes * año * llave secreta y lo convierte a Hexadecimal (base 16)
+      const pass = (mes * anio * llaveSecreta).toString(16);
+      return pass;
+    }
+
     // --- LÓGICA PARA DESBLOQUEAR LA APP ---
     function unlockApp() {
-      // Usamos clases para ocultar/mostrar sin alterar los estilos inline de tu diseño original
-      document.getElementById('maintenanceScreen').classList.add('oculto');
-      document.getElementById('mainApp').classList.remove('oculto');
+      const inputVal = document.getElementById('passInput').value;
+      const passCorrecta = getDynamicPassword();
+
+      if(inputVal === passCorrecta) {
+        // Ocultar login, mostrar app
+        document.getElementById('loginScreen').classList.add('oculto');
+        document.getElementById('mainApp').classList.remove('oculto');
+        document.getElementById('errorMsg').style.display = 'none';
+      } else {
+        // Mostrar error
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('passInput').value = '';
+        document.getElementById('passInput').focus();
+      }
     }
 
     // --- TU LÓGICA ORIGINAL INTACTA ---
@@ -347,11 +404,6 @@
           }
         }
 
-        // if (valores["LEU"] !== undefined && valores["SEG"] !== undefined) {
-        //   const ran = (valores["SEG"] / 100) * valores["LEU"];
-        //   resultados.push(`RAN ${ran.toFixed(2)}`);
-        // }
-
         if (resultados.length > 0) {
           salida.push(resultados.join("  "));
         }
@@ -445,15 +497,12 @@
             const regex = new RegExp(clave, "i");
             
             if (regex.test(linea)) {
-              // Buscamos un patrón: número de índice (opcional), nombre, y el valor numérico
-              // Ejemplo: "1  ACTH  14.90"
               const matchValor = linea.match(/(\d+\.?\d+)\s*(?=\s+Hrs|$)/) || linea.match(/(\d+\.?\d+)/);
               
               if (matchValor) {
                 let nombreHormona = mapa[clave];
                 let valor = matchValor[1];
                 
-                // Evitamos duplicados si la misma hormona aparece en el mismo bloque
                 if (!salidaFinal.some(item => item.startsWith(nombreHormona))) {
                   salidaFinal.push(`${nombreHormona} ${valor}`);
                 }
@@ -463,7 +512,6 @@
         }
       });
 
-      // Mostrar el resultado unido por espacios
       document.getElementById("output").textContent = salidaFinal.join(" ");
     }
 
@@ -475,134 +523,35 @@
       let salida = [];
       
       const mapa = [
-        {
-            "name":"HERPES SIMPLE, TIPO 1",
-            "label":"HERPES SIMPLE TIPO 1",
-            "tipo":1
-        },
-        {
-            "name":"HERPES SIMPLE, TIPO 2",
-            "label":"HERPES SIMPLE TIPO 2",
-            "tipo":1
-        },
-        {
-            "name":"AC ANTI TOXOPLASMA GONDII IGG",
-            "label":"AC ANTI TOXOPLASMA GONDII IGG",
-            "tipo":2
-        },
-        {
-            "name":"AC ANTI TOXOPLASMA GONDII IGM",
-            "label":"AC ANTI TOXOPLASMA GONDII IGM",
-            "tipo":2
-        },
-        {
-            "name":"AC CITOMEGALOVIRUS IGM",
-            "label":"CMV IGM",
-            "tipo":2
-        },
-        {
-            "name":"AC CITOMEGALOVIRUS IGG",
-            "label":"CMV IGG",
-            "tipo":2
-        },
-        {
-            "name":"AC ANTI RUBEOLA IGG",
-            "label":"AC ANTI RUBEOLA IGG",
-            "tipo":2
-        },
-        {
-            "name":"AC ANTI RUBEOLA IGM",
-            "label":"AC ANTI RUBEOLA IGM",
-            "tipo":2
-        },
-        {
-          "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)",
-          "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)",
-          "tipo":1
-        },
-        {
-          "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)",
-          "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)",
-          "tipo":1
-        },
-        {
-            "name":"ANTICUERPO ANTI HTLV-I II",
-            "label":"ANTICUERPO ANTI HTLV-I II",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS B ANTIGENO DE SUPERF", ////
-            "label":"HEPATITIS B ANTIGENO DE SUPERF",
-            "tipo":2
-        },
-        {
-            "name":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)",
-            "label":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS A ANTICUERPO IGG",
-            "label":"HEPATITIS A ANTICUERPO IGG",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS A ANTICUERPO IGM",
-            "label":"HEPATITIS A ANTICUERPO IGM",
-            "tipo":2
-        },
-                {
-            "name":"HEPATITIS A ANTICUERPOs IGG",
-            "label":"HEPATITIS A ANTICUERPOs IGG",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS A ANTICUERPOs IGM",
-            "label":"HEPATITIS A ANTICUERPOs IGM",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE",
-            "label":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE",
-            "tipo":2
-        },
-                {
-            "name":"HEPATITIS B ANTIGENO E",
-            "label":"HEPATITIS B ANTIGENO E",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS B AC. ANTI CORE IGM",
-            "label":"HEPATITIS B AC. ANTI CORE IGM",
-            "tipo":2
-        },
-        {
-            "name":"HEPAT B AC.CONTRA ANTIGENO E",
-            "label":"HEPAT B AC.CONTRA ANTIGENO E",
-            "tipo":2
-        },
-        {
-            "name":"HEPATITIS C - (HCV)",
-            "label":"HEPATITIS C - (HCV)",
-            "tipo":2
-        },
+        { "name":"HERPES SIMPLE, TIPO 1", "label":"HERPES SIMPLE TIPO 1", "tipo":1 },
+        { "name":"HERPES SIMPLE, TIPO 2", "label":"HERPES SIMPLE TIPO 2", "tipo":1 },
+        { "name":"AC ANTI TOXOPLASMA GONDII IGG", "label":"AC ANTI TOXOPLASMA GONDII IGG", "tipo":2 },
+        { "name":"AC ANTI TOXOPLASMA GONDII IGM", "label":"AC ANTI TOXOPLASMA GONDII IGM", "tipo":2 },
+        { "name":"AC CITOMEGALOVIRUS IGM", "label":"CMV IGM", "tipo":2 },
+        { "name":"AC CITOMEGALOVIRUS IGG", "label":"CMV IGG", "tipo":2 },
+        { "name":"AC ANTI RUBEOLA IGG", "label":"AC ANTI RUBEOLA IGG", "tipo":2 },
+        { "name":"AC ANTI RUBEOLA IGM", "label":"AC ANTI RUBEOLA IGM", "tipo":2 },
+        { "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)", "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA NUCLEOCAPSIDE (EBNA)", "tipo":1 },
+        { "name":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)", "label":"ANTICUERPOS; VIRUS EPSTEIN-BARR (EB), ANTIGENO DE LA CAPSIDE DEL VIRUS (VCA)", "tipo":1 },
+        { "name":"ANTICUERPO ANTI HTLV-I II", "label":"ANTICUERPO ANTI HTLV-I II", "tipo":2 },
+        { "name":"HEPATITIS B ANTIGENO DE SUPERF", "label":"HEPATITIS B ANTIGENO DE SUPERF", "tipo":2 },
+        { "name":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)", "label":"ANTICUERPO CONTRA EL ANTIGENO DE LA NUCLEOCAPSIDE DE LA HEPATITIS B (HBCAB)", "tipo":2 },
+        { "name":"HEPATITIS A ANTICUERPO IGG", "label":"HEPATITIS A ANTICUERPO IGG", "tipo":2 },
+        { "name":"HEPATITIS A ANTICUERPO IGM", "label":"HEPATITIS A ANTICUERPO IGM", "tipo":2 },
+        { "name":"HEPATITIS A ANTICUERPOs IGG", "label":"HEPATITIS A ANTICUERPOs IGG", "tipo":2 },
+        { "name":"HEPATITIS A ANTICUERPOs IGM", "label":"HEPATITIS A ANTICUERPOs IGM", "tipo":2 },
+        { "name":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE", "label":"HEPATITIS B AC. CONTRA ANTIG.SUPERFICIE", "tipo":2 },
+        { "name":"HEPATITIS B ANTIGENO E", "label":"HEPATITIS B ANTIGENO E", "tipo":2 },
+        { "name":"HEPATITIS B AC. ANTI CORE IGM", "label":"HEPATITIS B AC. ANTI CORE IGM", "tipo":2 },
+        { "name":"HEPAT B AC.CONTRA ANTIGENO E", "label":"HEPAT B AC.CONTRA ANTIGENO E", "tipo":2 },
+        { "name":"HEPATITIS C - (HCV)", "label":"HEPATITIS C - (HCV)", "tipo":2 },
       ];
-
-      //console.log(bloques);
 
       bloques.forEach(bloque => {
         let resultados = [];
         let valores = {};
         
         for (let clave of mapa) {
-          console.log("clave; ", clave.name);
-          console.log("valor: ", clave.label);
-
-          // const patron = escapeRegex(clave.name);
-          // regex = new RegExp(clave.name, "i");
-          // if (!regex.test(bloque)) {
-          //   console.log("no aplica");
-          //   continue;
-          // }
           if (!bloque.includes(clave.name)) {
             continue;
           }
@@ -612,50 +561,30 @@
             const lineas = bloqueMuestra[1].split(/\n/);
             for (let linea of lineas) {
               let resultadoLinea = "";
-              if(linea.toLowerCase().includes("IGG".toLowerCase())){
-                resultadoLinea = resultadoLinea +`IGG`;
-              }
-              if(linea.toLowerCase().includes("IGM".toLowerCase())){
-                resultadoLinea = resultadoLinea +`IGM`;
-              } 
-              if(linea.toLowerCase().includes("POSITIVO".toLowerCase())){
-                resultadoLinea = resultadoLinea +` POSITIVO`;
-              }
-              if(linea.toLowerCase().includes("NEGATIVO".toLowerCase())){
-                resultadoLinea = resultadoLinea +` NEGATIVO`;
-              }
-              if(resultadoLinea === ""){
-                continue;
-              }
+              if(linea.toLowerCase().includes("IGG".toLowerCase())){ resultadoLinea = resultadoLinea +`IGG`; }
+              if(linea.toLowerCase().includes("IGM".toLowerCase())){ resultadoLinea = resultadoLinea +`IGM`; } 
+              if(linea.toLowerCase().includes("POSITIVO".toLowerCase())){ resultadoLinea = resultadoLinea +` POSITIVO`; }
+              if(linea.toLowerCase().includes("NEGATIVO".toLowerCase())){ resultadoLinea = resultadoLinea +` NEGATIVO`; }
+              if(resultadoLinea === ""){ continue; }
               resultados.push(`${clave.label} ${resultadoLinea}`);
-              //console.log(resultadoLinea);
             }
-            console.log(resultados);
           }
           
           if (clave.tipo == 2) {
             const bloqueMuestra = bloque.split(/MUESTRA/i);
             const lineas = bloqueMuestra[1].split(/\n/);
             for (let linea of lineas) {
-              let resultadoLinea = "";
               if(linea.toLowerCase().includes(clave.name.toLowerCase())){
                   lineaTratada = linea.replace(/[<>]/g, "");
-
-                  const regex = new RegExp(
-                    clave.name + "\\s*[:=]?\\s*([0-9]+[.,]?[0-9]*)",
-                    "i"
-                  );
-
+                  const regex = new RegExp(clave.name + "\\s*[:=]?\\s*([0-9]+[.,]?[0-9]*)", "i");
                   const match = lineaTratada.match(regex);
 
                   if (match) {
                     let valor = parseFloat(match[1].replace(",", "."));
-                    console.log("tipo 2:", valor);
                     resultados.push(`${clave.label} ${valor}`);
                   } else {
                     const matchReactivo = lineaTratada.match(/\b(NO\s+REACTIVO|REACTIVO)\b/i);
                     if (matchReactivo) {
-                      console.log(matchReactivo[1]); // "REACTIVO" o "NO REACTIVO"
                       resultados.push(`${clave.label} ${matchReactivo[1]}`);
                     }
                   }
@@ -667,7 +596,6 @@
         if (resultados.length > 0) {
           salida.push(resultados.join("\n"));
         }
-        
       })
 
       document.getElementById("output").textContent = `VIRALES: ` + salida.join("\n");
@@ -681,58 +609,19 @@
       let salida = [];
 
       const mapa = [
-        {
-          name: "BETA GLOBULINA",
-          label: "Beta",
-          type: 1,
-          posicion: 0
-        },
-        {
-          name: "GAMMA GLOBULINA",
-          label: "Gamma",
-          type: 1,
-          posicion: 1
-        },
-        {
-          name: "IgG",
-          label: "/ IF : IgG Lambda / IgG",
-          type: 2,
-          posicion: 2
-        },
-        {
-          name: "IgA",
-          label: "IgA",
-          type: 2,
-          posicion: 3
-        },
-        {
-          name: "IgM",
-          label: "IgM:",
-          type: 2,
-          posicion: 4
-        },
-        {
-          name: "CADENA KAPPA LIBRE",
-          label: "/ K",
-          type: 2,
-          posicion: 5
-        },
-        {
-          name: "CADENA LAMBDA LIBRE",
-          label: "/ L",
-          type: 2,
-          posicion: 6
-        },
+        { name: "BETA GLOBULINA", label: "Beta", type: 1, posicion: 0 },
+        { name: "GAMMA GLOBULINA", label: "Gamma", type: 1, posicion: 1 },
+        { name: "IgG", label: "/ IF : IgG Lambda / IgG", type: 2, posicion: 2 },
+        { name: "IgA", label: "IgA", type: 2, posicion: 3 },
+        { name: "IgM", label: "IgM:", type: 2, posicion: 4 },
+        { name: "CADENA KAPPA LIBRE", label: "/ K", type: 2, posicion: 5 },
+        { name: "CADENA LAMBDA LIBRE", label: "/ L", type: 2, posicion: 6 },
       ]
       
       bloques.forEach(bloque => {
         let resultados = [];
-        let valores = {};
         
         for (let clave of mapa) {
-          // console.log("clave; ", clave.name);
-          // console.log("valor: ", clave.label);
-
           if (!bloque.includes(clave.name)) {
             continue;
           }
@@ -742,45 +631,33 @@
             const lineas = bloqueMuestra[1].split(/\n/);
             let coincidenciaPrevia = false;
             for (let linea of lineas) {
-
               if (coincidenciaPrevia) {
-                console.log("Procesando línea siguiente:", linea);
                 let match = linea.match(/(\d+)\.(\d+)/);
                 if (match) {
                   let numero = `${match[1]}.${match[2]}`;
-                  console.log(numero); // 0,7
                   resultados.push([`${clave.label} ${numero}`, clave.posicion]);
                 }
                 coincidenciaPrevia = false;
                 continue;
               }
-
               if (linea.toLowerCase().includes(clave.name.toLowerCase())) {
                 coincidenciaPrevia = true;
-                continue; // no procesas esta, sino la siguiente
+                continue; 
               }
-              
             }
-            console.log(resultados);
           }
           
           if (clave.type == 2) {
-            console.log("tipo 2: ");
             const bloqueMuestra = bloque.split(/Muestra:/);
-            console.log(bloqueMuestra);
             const lineas = bloqueMuestra[1].split(/\n/);
             for (let linea of lineas) {
-              let resultadoLinea = "";
               if(linea.toLowerCase().includes(clave.name.toLowerCase())){
                 let limpia = linea.replace(/^\d+\s+/, "");
                 const matches = limpia.match(/\d+(?:[.,]\d+)?/g);
-                //console.log(limpia.match(/\d+(?:[.,]\d+)?/g));
-
                 const ultimo = matches ? matches[matches.length - 1] : null;
                 if (ultimo) {
                   let valor = parseFloat(ultimo.replace(",", "."));
                   resultados.push([`${clave.label} ${valor}`, clave.posicion]);
-                  //resultados.splice(clave.posicion, 0, `${clave.label} ${valor}`);
                 }
               }
             }
@@ -788,18 +665,14 @@
         }
         
         if (resultados.length > 0) {
-          console.log("resultados", resultados);
           salida.push(...resultados);
-          //salida.push(resultados.join(" "));
         }
-        
       })
       const salidaOrdenada = [...salida]
             .sort((a, b) => a[1] - b[1])
             .map(e => e[0]);
 
       document.getElementById("output").textContent = `Sérico: PEF:` + salidaOrdenada.join(" ");
-      //Sérico: PEF: Beta 0.7 Gamma 0.7 / IF (Inmunofijacion): IgG Lambda / IgG 985 IgA 69 IgM: 36 / K (Kappa) 25 / L (Lambda) 73
     }
 
     function extraerPefUrinario() {
@@ -810,46 +683,17 @@
       let salida = [];
 
       const mapa = [
-        {
-          name: "BETA GLOBULINA",
-          label: "Beta",
-          type: 1,
-          posicion: 0
-        },
-        {
-          name: "GAMMA GLOBULINA",
-          label: "Gamma",
-          type: 1,
-          posicion: 1
-        },
-        {
-          name: "Bence Jones",
-          label: "/ IF :",
-          type: 3,
-          posicion: 2
-        },
-        {
-          name: "CADENA KAPPA LIBRE",
-          label: "/ K",
-          type: 2,
-          posicion: 3
-        },
-        {
-          name: "CADENA LAMBDA LIBRE",
-          label: "/ L",
-          type: 2,
-          posicion: 4
-        },
+        { name: "BETA GLOBULINA", label: "Beta", type: 1, posicion: 0 },
+        { name: "GAMMA GLOBULINA", label: "Gamma", type: 1, posicion: 1 },
+        { name: "Bence Jones", label: "/ IF :", type: 3, posicion: 2 },
+        { name: "CADENA KAPPA LIBRE", label: "/ K", type: 2, posicion: 3 },
+        { name: "CADENA LAMBDA LIBRE", label: "/ L", type: 2, posicion: 4 },
       ]
       
       bloques.forEach(bloque => {
         let resultados = [];
-        let valores = {};
         
         for (let clave of mapa) {
-          // console.log("clave; ", clave.name);
-          // console.log("valor: ", clave.label);
-
           if (!bloque.includes(clave.name)) {
             continue;
           }
@@ -859,40 +703,29 @@
             const lineas = bloqueMuestra[1].split(/\n/);
             let coincidenciaPrevia = false;
             for (let linea of lineas) {
-
               if (coincidenciaPrevia) {
-                console.log("Procesando línea siguiente:", linea);
                 let match = linea.match(/(\d+)\.(\d+)/);
                 if (match) {
                   let numero = `${match[1]}.${match[2]}`;
-                  console.log(numero); // 0,7
                   resultados.push([`${clave.label} ${numero}`, clave.posicion]);
                 }
                 coincidenciaPrevia = false;
                 continue;
               }
-
               if (linea.toLowerCase().includes(clave.name.toLowerCase())) {
                 coincidenciaPrevia = true;
-                continue; // no procesas esta, sino la siguiente
+                continue;
               }
-              
             }
-            //console.log(resultados);
           }
           
           if (clave.type == 2) {
-            console.log("tipo 2: ");
             const bloqueMuestra = bloque.split(/Muestra:/);
-            //console.log(bloqueMuestra);
             const lineas = bloqueMuestra[1].split(/\n/);
             for (let linea of lineas) {
-              let resultadoLinea = "";
               if(linea.toLowerCase().includes(clave.name.toLowerCase())){
                 let limpia = linea.replace(/^\d+\s+/, "");
                 const matches = limpia.match(/\d+(?:[.,]\d+)?/g);
-                //console.log(limpia.match(/\d+(?:[.,]\d+)?/g));
-
                 const ultimo = matches ? matches[matches.length - 1] : null;
                 if (ultimo) {
                   let valor = parseFloat(ultimo.replace(",", "."));
@@ -903,9 +736,7 @@
           }
 
           if (clave.type == 3) {
-            console.log("tipo 3: ");
             const bloqueMuestra = bloque.split(/Muestra:/);
-            console.log(bloqueMuestra);
             const lineas = bloqueMuestra[1].split(/\n/);
             for (let linea of lineas) {
               let resultadoLinea = "";
@@ -917,28 +748,21 @@
                   resultadoLinea = `(-)`;
                 }
               }
-              
-              if(resultadoLinea === ""){
-                continue;
-              }
-              console.log("Resultado linea;", resultadoLinea)
+              if(resultadoLinea === ""){ continue; }
               resultados.push([`${clave.label} ${resultadoLinea}`, clave.posicion]);
             }
           }
         }
         
         if (resultados.length > 0) {
-          console.log("resultados", resultados);
           salida.push(...resultados);
         }
-        
       })
       const salidaOrdenada = [...salida]
             .sort((a, b) => a[1] - b[1])
             .map(e => e[0]);
 
       document.getElementById("output").textContent = `Orina : PEF:` + salidaOrdenada.join(" ");
-      //Orina : PEF: Beta 0.0 Gamma 0.0 / IF (Bence Jones): (-)  / K (Kappa) 17 / L (Lambda) 2
     }
 
     function escapeRegex(text) {
